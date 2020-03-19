@@ -1060,12 +1060,15 @@ class WeaponGiver : Weapon
 		if (di != NULL)
 		{
 			Class<Weapon> ti = di.Name;
+			// Check for Absolute Replacement
+			ti = (Class<Weapon>)(GetReplacement(ti, invcheck:true));
+
 			if (ti != NULL)
 			{
 				if (master == NULL)
 				{
 					// save the spawned weapon in 'master' to avoid constant respawning if it cannot be picked up.
-					master = weap = Weapon(Spawn(di.Name));
+					master = weap = Weapon(Spawn(ti));
 					if (weap != NULL)
 					{
 						weap.bAlwaysPickup = false;	// use the flag of self item only.

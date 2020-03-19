@@ -517,9 +517,19 @@ void PClassActor::RegisterIDs()
 //
 //==========================================================================
 
-PClassActor *PClassActor::GetReplacement(FLevelLocals *Level, bool lookskill)
+PClassActor *PClassActor::GetReplacement(FLevelLocals *Level, bool lookskill, bool invcheck)
 {
 	FName skillrepname = NAME_None;
+	// If this check is for an Absolute Replacement, only execute this block here
+	if(invcheck)
+	{
+		PClassActor *Replacement = ActorInfo()->Replacement;
+		if (Level && Level->localEventManager->CheckReplacement(this,&Replacement) )
+		{
+			return Replacement ? Replacement : this;
+		}
+		return this;
+	}
 	
 	if (lookskill && AllSkills.Size() > (unsigned)gameskill)
 	{

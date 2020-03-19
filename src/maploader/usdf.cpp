@@ -67,6 +67,8 @@ class USDFParser : public UDMFParserBase
 		else if (namespace_bits & ( Zd | Gz ))
 		{
 			PClassActor *cls = PClass::FindActor(CheckString(key));
+			// Check for Absolute Replacement
+			cls = cls->GetReplacement(currentVMLevel, true, true);
 			if (cls == nullptr)
 			{
 				sc.ScriptMessage("Unknown actor class '%s'", key);

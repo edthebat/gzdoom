@@ -350,7 +350,7 @@ public:
 		return i != nullptr && state >= i->OwnedStates && state < i->OwnedStates + i->NumOwnedStates;
 	}
 
-	PClassActor *GetReplacement(FLevelLocals *Level, bool lookskill=true);
+	PClassActor *GetReplacement(FLevelLocals *Level, bool lookskill=true, bool invcheck=false);
 	PClassActor *GetReplacee(FLevelLocals *Level, bool lookskill=true);
 
 	// For those times when being able to scan every kind of actor is convenient

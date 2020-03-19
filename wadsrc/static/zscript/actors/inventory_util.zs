@@ -63,6 +63,9 @@ extend class Actor
 	{
 		bool result = true;
 		let player = self.player;
+		
+		// Check for Absolute Replacement
+		type = (Class<Inventory>)(GetReplacement(type, invcheck:true));
 
 		// This can be called from places which do not check the given item's type.
 		if (type == null || !(type is 'Inventory')) return false;
@@ -138,8 +141,15 @@ extend class Actor
 
 	bool TakeInventory(class<Inventory> itemclass, int amount, bool fromdecorate = false, bool notakeinfinite = false)
 	{
+		// Check for Absolute Replacement
+		let originalitemclass = itemclass;
+		itemclass = (Class<Inventory>)(GetReplacement(itemclass, invcheck:true));
+
 		amount = abs(amount);
 		let item = FindInventory(itemclass);
+		// Replacement isn't in the inventory? Fall back on checking for the original item
+		if(item == NULL)
+			item = FindInventory(originalitemclass);
 
 		if (item == NULL)
 			return false;
@@ -187,6 +197,9 @@ extend class Actor
 
 	bool SetInventory(class<Inventory> itemclass, int amount, bool beyondMax = false)
 	{
+		// Check for Absolute Replacement
+		itemclass = (Class<Inventory>)(GetReplacement(itemclass, invcheck:true));
+
 		let item = FindInventory(itemclass);
 
 		if (item != null)
@@ -289,6 +302,13 @@ extend class Actor
 
 	Inventory DropInventory (Inventory item, int amt = 1)
 	{
+		// Check for Absolute Replacement
+		let originalitem = item;
+		let itemtype = (Class<Inventory>)(GetReplacement(item.GetClass(), invcheck:true));
+		item = FindInventory(itemtype);
+		// Replacement isn't in the inventory? Fall back on checking for the original item
+		if (item == null) item = originalitem;
+
 		Inventory drop = item.CreateTossable(amt);
 		if (drop == null) return NULL;
 		drop.SetOrigin(Pos + (0, 0, 10.), false);
@@ -415,6 +435,10 @@ extend class Actor
 		{
 			amount = 1;
 		}
+
+		// Check for Absolute Replacement
+		mi = (Class<Inventory>)(GetReplacement(mi, invcheck:true));
+
 		if (mi)
 		{
 			let item = Inventory(Spawn(mi));
@@ -694,6 +718,9 @@ extend class Actor
 		}
 		else
 		{
+			//Does not seem to work: "Can't call play function GetReplacement from data context"
+			//itemtype = (Class<Inventory>)(realself.GetReplacement(itemtype, invcheck:true));
+
 			let item = realself.FindInventory(itemtype);
 			return item ? item.Amount : 0;
 		}
@@ -716,6 +743,9 @@ extend class Actor
 		{
 			return false;
 		}
+
+		// Check for Absolute Replacement
+		itemtype = (Class<Inventory>)(GetReplacement(itemtype, invcheck:true));
 
 		let item = owner.FindInventory(itemtype);
 
@@ -789,6 +819,9 @@ extend class Actor
 		{
 			return false;
 		}
+
+		// Check for Absolute Replacement
+		whichweapon = (Class<Weapon>)(GetReplacement(whichweapon, invcheck:true));
 
 		let weaponitem = Weapon(FindInventory(whichweapon));
 

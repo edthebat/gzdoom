@@ -1272,16 +1272,17 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, GetSpriteIndex, ZS_GetSpriteIndex)
 	ACTION_RETURN_INT(ZS_GetSpriteIndex(sprt));
 }
 
-static PClassActor *ZS_GetReplacement(PClassActor *c)
+static PClassActor *ZS_GetReplacement(PClassActor *c, bool invcheck)
 {
-	return c->GetReplacement(currentVMLevel);
+	return c->GetReplacement(currentVMLevel, true, invcheck);
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, GetReplacement, ZS_GetReplacement)
 {
 	PARAM_PROLOGUE;
 	PARAM_POINTER(c, PClassActor);
-	ACTION_RETURN_POINTER(ZS_GetReplacement(c));
+	PARAM_BOOL(invcheck);
+	ACTION_RETURN_POINTER(ZS_GetReplacement(c, invcheck));
 }
 
 static PClassActor *ZS_GetReplacee(PClassActor *c)

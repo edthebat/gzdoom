@@ -1777,7 +1777,9 @@ int CheckInventory (AActor *activator, const char *type, bool max)
 	}
 
 	PClassActor *info = PClass::FindActor (type);
-
+	// Check for Absolute Replacement
+	info = info->GetReplacement (nullptr, true, true);
+	
 	if (info == NULL)
 	{
 		DPrintf (DMSG_ERROR, "ACS: '%s': Unknown actor class.\n", type);
@@ -6128,11 +6130,21 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 			
 			if (type != NULL)
 			{
+				// Check for Absolute Replacement
+				PClassActor *cls = PClass::FindActor(type);
+				auto originalcls = cls;
+				cls = cls->GetReplacement(currentVMLevel, true, true);
+			
 				if (args[0] == 0)
 				{
 					if (activator != NULL)
 					{
-						inv = activator->FindInventory(type);
+						inv = activator->FindInventory(cls);
+						
+						// Replacement isn't in the inventory? Fall back on checking for the original item
+						if (!inv)
+							inv = activator->FindInventory(originalcls);
+						
 						if (inv)
 						{
 							activator->DropInventory(inv);
@@ -6146,7 +6158,12 @@ doplaysound:			if (funcIndex == ACSF_PlayActorSound)
 					
 					while ((actor = it.Next()) != NULL)
 					{
-						inv = actor->FindInventory(type);
+						inv = actor->FindInventory(cls);
+						
+						// Replacement isn't in the inventory? Fall back on checking for the original item
+						if (!inv)
+							inv = actor->FindInventory(originalcls);		
+						
 						if (inv)
 						{
 							actor->DropInventory(inv);

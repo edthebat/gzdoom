@@ -120,6 +120,9 @@ class ScriptUtil play
 	{
 		if(activator != NULL && activator.player != NULL && cls != null)
 		{
+			// Check for Absolute Replacement
+			cls = (Class<Inventory>)(actor.GetReplacement(cls, invcheck:true));
+
 			let item = Weapon(activator.FindInventory(cls));
 
 			if(item != NULL)

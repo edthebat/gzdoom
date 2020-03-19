@@ -1821,9 +1821,18 @@ DEFINE_ACTION_FUNCTION(AActor, A_DropInventory)
 	PARAM_CLASS(drop, AActor);
 	PARAM_INT(amount);
 
+	// Check for Absolute Replacement
+	auto originaldrop = drop;
+	drop = drop->GetReplacement (self->Level, true, true);		
+		
 	if (drop)
 	{
 		auto inv = self->FindInventory(drop);
+		
+		// Replacement isn't in the inventory? Fall back on checking for the original item
+		if (!inv)
+			inv = self->FindInventory(originaldrop);
+		
 		if (inv)
 		{
 			self->DropInventory(inv, amount);
