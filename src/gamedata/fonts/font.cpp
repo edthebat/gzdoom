@@ -45,7 +45,7 @@
 #include "m_swap.h"
 #include "v_font.h"
 #include "v_video.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "gi.h"
 #include "cmdlib.h"
 #include "sc_man.h"
@@ -110,7 +110,7 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 		FStringf path("fonts/%s/", filetemplate);
 		// If a name template is given, collect data from all resource files.
 		// For anything else, each folder is being treated as an atomic, self-contained unit and mixing from different glyph sets is blocked.
-		Wads.GetLumpsInFolder(path, folderdata, nametemplate == nullptr);
+		fileSystem.GetFilesInFolder(path, folderdata, nametemplate == nullptr);
 		
 		//if (nametemplate == nullptr)
 		{
@@ -234,7 +234,7 @@ FFont::FFont (const char *name, const char *nametemplate, const char *filetempla
 					for (auto entry : array)
 					{
 						FTexture *tex = TexMan.GetTexture(entry, false);
-						if (tex && tex->SourceLump >= 0 && Wads.GetLumpFile(tex->SourceLump) <= Wads.GetMaxIwadNum() && tex->UseType == ETextureType::MiscPatch)
+						if (tex && tex->SourceLump >= 0 && fileSystem.GetFileContainer(tex->SourceLump) <= fileSystem.GetMaxIwadNum() && tex->UseType == ETextureType::MiscPatch)
 						{
 							texs[i] = tex;
 						}
@@ -666,7 +666,7 @@ void FFont::SetDefaultTranslation(uint32_t *othercolors)
 			}
 		}
 	}
-	Translations[CR_UNTRANSLATED] = remap.StoreTranslation(TRANSLATION_Font);
+	Translations[CR_UNTRANSLATED] = palMgr.StoreTranslation(TRANSLATION_Font, &remap);
 	forceremap = true;
 }
 
@@ -797,7 +797,7 @@ void FFont::BuildTranslations (const double *luminosity, const uint8_t *identity
 						remap.Palette[j] = GPalette.BaseColors[identity[j]] | MAKEARGB(255, 0, 0, 0);
 					}
 				}
-				Translations.Push(remap.StoreTranslation(TRANSLATION_Font));
+				Translations.Push(palMgr.StoreTranslation(TRANSLATION_Font, &remap));
 			}
 			else
 			{
@@ -837,7 +837,7 @@ void FFont::BuildTranslations (const double *luminosity, const uint8_t *identity
 			remap.Palette[j] = PalEntry(255,r,g,b);
 		}
 		if (post) post(&remap);
-		Translations.Push(remap.StoreTranslation(TRANSLATION_Font));
+		Translations.Push(palMgr.StoreTranslation(TRANSLATION_Font, &remap));
 
 		// Advance to the next color range.
 		while (parmstart[1].RangeStart > parmstart[0].RangeEnd)

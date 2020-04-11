@@ -32,11 +32,11 @@
 **
 */
 
-#include "doomerrors.h"
+#include "engineerrors.h"
 #include "textures.h"
 #include "image.h"
 #include "v_font.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "utf8.h"
 #include "sc_man.h"
 
@@ -417,7 +417,7 @@ public:
 				}
 			}
 		}
-		Translations[CR_UNTRANSLATED] = remap.StoreTranslation(TRANSLATION_Font);
+		Translations[CR_UNTRANSLATED] = palMgr.StoreTranslation(TRANSLATION_Font, &remap);
 		forceremap = true;
 
 	}

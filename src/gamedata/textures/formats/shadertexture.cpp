@@ -37,7 +37,7 @@
 #include "doomtype.h"
 #include "d_player.h"
 #include "menu/menu.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "bitmap.h"
 #include "imagehelpers.h"
 #include "image.h"
@@ -122,7 +122,7 @@ public:
 
 	int CopyPixels(FBitmap *bmp, int conversion) override
 	{
-		bmp->CopyPixelData(0, 0, Pixels, Width, Height, Height, 1, 0, translationtables[TRANSLATION_Standard][8]->Palette);
+		bmp->CopyPixelData(0, 0, Pixels, Width, Height, Height, 1, 0, palMgr.GetTranslation(TRANSLATION_Standard, STD_Gray)->Palette);
 		return 0;
 	}
 

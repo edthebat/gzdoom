@@ -893,13 +893,13 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, isTeammate, isTeammate)
 
 static int GetSpecies(AActor *self)
 {
-	return self->GetSpecies();
+	return self->GetSpecies().GetIndex();
 }
 
 DEFINE_ACTION_FUNCTION_NATIVE(AActor, GetSpecies, GetSpecies)
 {
 	PARAM_SELF_PROLOGUE(AActor);
-	ACTION_RETURN_INT(self->GetSpecies());
+	ACTION_RETURN_INT(GetSpecies(self));
 }
 
 static int isFriend(AActor *self, AActor *other)
@@ -1626,6 +1626,23 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_NoBlocking, A_Unblock)
 	PARAM_SELF_PROLOGUE(AActor);
 	PARAM_BOOL(drop);
 	A_Unblock(self, drop);
+	return 0;
+}
+
+static void CopyBloodColor(AActor* self, AActor* other)
+{
+	if (self && other)
+	{
+		self->BloodColor = other->BloodColor;
+		self->BloodTranslation = other->BloodTranslation;
+	}
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, CopyBloodColor, CopyBloodColor)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_OBJECT(other, AActor);
+	CopyBloodColor(self, other);
 	return 0;
 }
 

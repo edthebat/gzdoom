@@ -35,6 +35,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #ifdef _WIN32
 #include <direct.h>
@@ -47,13 +48,13 @@
 #include "c_dispatch.h"
 
 #include "i_system.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 #include "doomstat.h"
 #include "gstrings.h"
 #include "s_sound.h"
 #include "g_game.h"
 #include "g_level.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "gi.h"
 #include "r_defs.h"
 #include "d_player.h"
@@ -68,6 +69,8 @@
 #include "c_functions.h"
 #include "g_levellocals.h"
 #include "v_video.h"
+#include "md5.h"
+#include "findfile.h"
 
 extern FILE *Logfile;
 extern bool insave;
@@ -643,8 +646,7 @@ CCMD (error)
 {
 	if (argv.argc() > 1)
 	{
-		char *textcopy = copystring (argv[1]);
-		I_Error ("%s", textcopy);
+		I_Error ("%s", argv[1]);
 	}
 	else
 	{
@@ -656,8 +658,7 @@ UNSAFE_CCMD (error_fatal)
 {
 	if (argv.argc() > 1)
 	{
-		char *textcopy = copystring (argv[1]);
-		I_FatalError ("%s", textcopy);
+		I_FatalError ("%s", argv[1]);
 	}
 	else
 	{
@@ -847,17 +848,17 @@ CCMD (wdir)
 		Printf ("usage: wdir <wadfile>\n");
 		return;
 	}
-	int wadnum = Wads.CheckIfWadLoaded (argv[1]);
+	int wadnum = fileSystem.CheckIfResourceFileLoaded (argv[1]);
 	if (wadnum < 0)
 	{
 		Printf ("%s must be loaded to view its directory.\n", argv[1]);
 		return;
 	}
-	for (int i = 0; i < Wads.GetNumLumps(); ++i)
+	for (int i = 0; i < fileSystem.GetNumEntries(); ++i)
 	{
-		if (Wads.GetLumpFile(i) == wadnum)
+		if (fileSystem.GetFileContainer(i) == wadnum)
 		{
-			Printf ("%s\n", Wads.GetLumpFullName(i));
+			Printf ("%s\n", fileSystem.GetFileFullName(i));
 		}
 	}
 }
@@ -1220,10 +1221,10 @@ CCMD(secret)
 	bool thislevel = !stricmp(mapname, primaryLevel->MapName);
 	bool foundsome = false;
 
-	int lumpno=Wads.CheckNumForName("SECRETS");
+	int lumpno=fileSystem.CheckNumForName("SECRETS");
 	if (lumpno < 0) return;
 
-	auto lump = Wads.OpenLumpReader(lumpno);
+	auto lump = fileSystem.OpenFileReader(lumpno);
 	FString maphdr;
 	maphdr.Format("[%s]", mapname);
 
@@ -1304,4 +1305,46 @@ CCMD(r_showcaps)
 	PRINT_CAP("Uses Polygon rendering", RFF_POLYGONAL)
 	PRINT_CAP("Truecolor Enabled", RFF_TRUECOLOR)
 	PRINT_CAP("Voxels", RFF_VOXELS)
+}
+
+
+//==========================================================================
+//
+// CCMD md5sum
+//
+// Like the command-line tool, because I wanted to make sure I had it right.
+//
+//==========================================================================
+
+CCMD (md5sum)
+{
+	if (argv.argc() < 2)
+	{
+		Printf("Usage: md5sum <file> ...\n");
+	}
+	for (int i = 1; i < argv.argc(); ++i)
+	{
+		FileReader fr;
+		if (!fr.OpenFile(argv[i]))
+		{
+			Printf("%s: %s\n", argv[i], strerror(errno));
+		}
+		else
+		{
+			MD5Context md5;
+			uint8_t readbuf[8192];
+			size_t len;
+
+			while ((len = fr.Read(readbuf, sizeof(readbuf))) > 0)
+			{
+				md5.Update(readbuf, (unsigned int)len);
+			}
+			md5.Final(readbuf);
+			for(int j = 0; j < 16; ++j)
+			{
+				Printf("%02x", readbuf[j]);
+			}
+			Printf(" *%s\n", argv[i]);
+		}
+	}
 }

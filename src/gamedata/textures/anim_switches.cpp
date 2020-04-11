@@ -36,7 +36,7 @@
 #include "textures/textures.h"
 #include "s_sound.h"
 #include "r_state.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "cmdlib.h"
 #include "sc_man.h"
 #include "gi.h"
@@ -60,11 +60,11 @@ static int SortSwitchDefs (const void *a, const void *b)
 void FTextureManager::InitSwitchList ()
 {
 	const BITFIELD texflags = TEXMAN_Overridable | TEXMAN_TryAny;
-	int lump = Wads.CheckNumForName ("SWITCHES");
+	int lump = fileSystem.CheckNumForName ("SWITCHES");
 
 	if (lump != -1)
 	{
-		FMemLump lumpdata = Wads.ReadLump (lump);
+		FileData lumpdata = fileSystem.ReadFile (lump);
 		const char *alphSwitchList = (const char *)lumpdata.GetMem();
 		const char *list_p;
 		FSwitchDef *def1, *def2;
@@ -268,7 +268,7 @@ FSwitchDef *FTextureManager::ParseSwitchDef (FScanner &sc, bool ignoreBad)
 				max = sc.Number & 65535;
 				if (min > max)
 				{
-					swapvalues (min, max);
+					std::swap (min, max);
 				}
 				thisframe.TimeMin = min;
 				thisframe.TimeRnd = (max - min + 1);

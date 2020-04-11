@@ -35,7 +35,7 @@
 
 #include "doomtype.h"
 #include "files.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "v_video.h"
 #include "bitmap.h"
 #include "imagehelpers.h"
@@ -122,7 +122,7 @@ FIMGZTexture::FIMGZTexture (int lumpnum, uint16_t w, uint16_t h, int16_t l, int1
 
 TArray<uint8_t> FIMGZTexture::CreatePalettedPixels(int conversion)
 {
-	FMemLump lump = Wads.ReadLump (SourceLump);
+	FileData lump = fileSystem.ReadFile (SourceLump);
 	const ImageHeader *imgz = (const ImageHeader *)lump.GetMem();
 	const uint8_t *data = (const uint8_t *)&imgz[1];
 
@@ -203,6 +203,6 @@ TArray<uint8_t> FIMGZTexture::CreatePalettedPixels(int conversion)
 int FIMGZTexture::CopyPixels(FBitmap *bmp, int conversion)
 {
 	if (!isalpha) return FImageSource::CopyPixels(bmp, conversion);
-	else return CopyTranslatedPixels(bmp, translationtables[TRANSLATION_Standard][STD_Grayscale]->Palette);
+	else return CopyTranslatedPixels(bmp, palMgr.GetTranslation(TRANSLATION_Standard, STD_Grayscale)->Palette);
 }
 

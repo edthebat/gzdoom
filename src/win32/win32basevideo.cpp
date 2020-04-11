@@ -48,8 +48,9 @@
 #include "doomstat.h"
 #include "v_text.h"
 #include "m_argv.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 #include "win32basevideo.h"
+#include "cmdlib.h"
 
 #include "gl/system/gl_framebuffer.h"
 
