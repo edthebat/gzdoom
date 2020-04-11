@@ -39,6 +39,7 @@
 #include "vectors.h"
 
 #include "doomdef.h"
+#include "m_png.h"
 #include "dobject.h"
 #include "r_data/renderstyle.h"
 #include "c_cvars.h"
@@ -121,7 +122,7 @@ void V_OutputResized (int width, int height);
 void V_CalcCleanFacs (int designwidth, int designheight, int realwidth, int realheight, int *cleanx, int *cleany, int *cx1=NULL, int *cx2=NULL);
 
 EXTERN_CVAR(Int, vid_rendermode)
-EXTERN_CVAR(Bool, fullscreen)
+EXTERN_CVAR(Bool, vid_fullscreen)
 EXTERN_CVAR(Int, win_x)
 EXTERN_CVAR(Int, win_y)
 EXTERN_CVAR(Int, win_w)
@@ -349,7 +350,6 @@ protected:
 	bool Bgra;
 };
 
-class FUniquePalette;
 class IHardwareTexture;
 class FTexture;
 
@@ -613,16 +613,6 @@ void V_Shutdown ();
 
 class FScanner;
 struct FScriptPosition;
-// Returns the closest color to the one desired. String
-// should be of the form "rr gg bb".
-int V_GetColorFromString (const uint32_t *palette, const char *colorstring, FScriptPosition *sc = nullptr);
-// Scans through the X11R6RGB lump for a matching color
-// and returns a color string suitable for V_GetColorFromString.
-FString V_GetColorStringByName (const char *name, FScriptPosition *sc = nullptr);
-
-// Tries to get color by name, then by string
-int V_GetColor (const uint32_t *palette, const char *str, FScriptPosition *sc = nullptr);
-int V_GetColor(const uint32_t *palette, FScanner &sc);
 
 inline bool IsRatioWidescreen(int ratio) { return (ratio & 3) != 0; }
 

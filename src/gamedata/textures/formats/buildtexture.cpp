@@ -36,14 +36,14 @@
 
 #include "doomtype.h"
 #include "files.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "templates.h"
 #include "cmdlib.h"
 #include "colormatcher.h"
 #include "bitmap.h"
 #include "textures/textures.h"
 #include "r_data/sprites.h"
-#include "resourcefiles/resourcefile.h"
+#include "resourcefile.h"
 #include "image.h"
 
 
@@ -84,7 +84,7 @@ FBuildTexture::FBuildTexture(const FString &pathprefix, int tilenum, const uint8
 TArray<uint8_t> FBuildTexture::CreatePalettedPixels(int conversion)
 {
 	TArray<uint8_t> Pixels(Width * Height, true);
-	FRemapTable *Remap = translationtables[TRANSLATION_Standard][Translation];
+	FRemapTable *Remap = palMgr.GetTranslation(TRANSLATION_Standard, Translation);
 	for (int i = 0; i < Width*Height; i++)
 	{
 		auto c = RawPixels[i];
@@ -95,7 +95,7 @@ TArray<uint8_t> FBuildTexture::CreatePalettedPixels(int conversion)
 
 int FBuildTexture::CopyPixels(FBitmap *bmp, int conversion)
 {
-	PalEntry *Remap = translationtables[TRANSLATION_Standard][Translation]->Palette;
+	PalEntry *Remap = palMgr.GetTranslation(TRANSLATION_Standard, Translation)->Palette;
 	bmp->CopyPixelData(0, 0, RawPixels, Width, Height, Height, 1, 0, Remap);
 	return -1;
 
@@ -238,12 +238,12 @@ static int CountTiles (const void *tiles)
 
 static int BuildPaletteTranslation(int lump)
 {
-	if (Wads.LumpLength(lump) < 768)
+	if (fileSystem.FileLength(lump) < 768)
 	{
 		return false;
 	}
 
-	FMemLump data = Wads.ReadLump(lump);
+	FileData data = fileSystem.ReadFile(lump);
 	const uint8_t *ipal = (const uint8_t *)data.GetMem();
 	FRemapTable opal;
 
@@ -280,7 +280,7 @@ static int BuildPaletteTranslation(int lump)
 	opal.Remap[255] = 0;
 	// Store the remap table in the translation manager so that we do not need to keep track of it ourselves. 
 	// Slot 0 for internal translations is a convenient location because normally it only contains a small number of translations.
-	return GetTranslationIndex(opal.StoreTranslation(TRANSLATION_Standard));
+	return GetTranslationIndex(palMgr.StoreTranslation(TRANSLATION_Standard, &opal));
 }
 
 
@@ -309,14 +309,14 @@ void FTextureManager::InitBuildTiles()
 	// Unfortunately neither the palettes nor the .ART files contain any usable identifying marker
 	// so this can only go by the file names.
 
-	int numlumps = Wads.GetNumLumps();
+	int numlumps = fileSystem.GetNumEntries();
 	for (int i = 0; i < numlumps; i++)
 	{
-		const char *name = Wads.GetLumpFullName(i);
-		if (Wads.CheckNumForFullName(name) != i) continue;	// This palette is hidden by a later one. Do not process
+		const char *name = fileSystem.GetFileFullName(i);
+		if (fileSystem.CheckNumForFullName(name) != i) continue;	// This palette is hidden by a later one. Do not process
 		FString base = ExtractFileBase(name, true);
 		base.ToLower();
-		if (base.Compare("palette.dat") == 0 && Wads.LumpLength(i) >= 768)	// must be a valid palette, i.e. at least 256 colors.
+		if (base.Compare("palette.dat") == 0 && fileSystem.FileLength(i) >= 768)	// must be a valid palette, i.e. at least 256 colors.
 		{
 			FString path = ExtractFilePath(name);
 			if (path.IsNotEmpty() && path.Back() != '/') path += '/';
@@ -328,7 +328,7 @@ void FTextureManager::InitBuildTiles()
 				// only read from the same source as the palette.
 				// The entire format here is just too volatile to allow liberal mixing.
 				// An .ART set must be treated as one unit.
-				lumpnum = Wads.CheckNumForFullName(artpath, Wads.GetLumpFile(i));	
+				lumpnum = fileSystem.CheckNumForFullName(artpath, fileSystem.GetFileContainer(i));	
 				if (lumpnum < 0)
 				{
 					break;
@@ -336,8 +336,8 @@ void FTextureManager::InitBuildTiles()
 
 				BuildTileData.Reserve(1);
 				auto &artdata = BuildTileData.Last();
-				artdata.Resize(Wads.LumpLength(lumpnum));
-				Wads.ReadLump(lumpnum, &artdata[0]);
+				artdata.Resize(fileSystem.FileLength(lumpnum));
+				fileSystem.ReadFile(lumpnum, &artdata[0]);
 
 				if ((numtiles = CountTiles(&artdata[0])) > 0)
 				{

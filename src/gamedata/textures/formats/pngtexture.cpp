@@ -35,12 +35,13 @@
 
 #include "doomtype.h"
 #include "files.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "templates.h"
 #include "m_png.h"
 #include "bitmap.h"
 #include "imagehelpers.h"
 #include "image.h"
+#include "textures.h"
 
 //==========================================================================
 //
@@ -193,12 +194,12 @@ FPNGTexture::FPNGTexture (FileReader &lump, int lumpnum, int width, int height,
 				ihoty = BigLong((int)hoty);
 				if (ihotx < -32768 || ihotx > 32767)
 				{
-					Printf ("X-Offset for PNG texture %s is bad: %d (0x%08x)\n", Wads.GetLumpFullName (lumpnum), ihotx, ihotx);
+					Printf ("X-Offset for PNG texture %s is bad: %d (0x%08x)\n", fileSystem.GetFileFullName (lumpnum), ihotx, ihotx);
 					ihotx = 0;
 				}
 				if (ihoty < -32768 || ihoty > 32767)
 				{
-					Printf ("Y-Offset for PNG texture %s is bad: %d (0x%08x)\n", Wads.GetLumpFullName (lumpnum), ihoty, ihoty);
+					Printf ("Y-Offset for PNG texture %s is bad: %d (0x%08x)\n", fileSystem.GetFileFullName (lumpnum), ihoty, ihoty);
 					ihoty = 0;
 				}
 				LeftOffset = ihotx;
@@ -259,7 +260,7 @@ FPNGTexture::FPNGTexture (FileReader &lump, int lumpnum, int width, int height,
 
 	case 3:		// Paletted
 		PaletteMap = (uint8_t*)ImageArena.Alloc(PaletteSize);
-		GPalette.MakeRemap (p.palette, PaletteMap, trans, PaletteSize);
+		MakeRemap ((uint32_t*)GPalette.BaseColors, p.palette, PaletteMap, trans, PaletteSize);
 		for (i = 0; i < PaletteSize; ++i)
 		{
 			if (trans[i] == 0)
@@ -311,7 +312,7 @@ TArray<uint8_t> FPNGTexture::CreatePalettedPixels(int conversion)
 	FileReader *lump;
 	FileReader lfr;
 
-	lfr = Wads.OpenLumpReader(SourceLump);
+	lfr = fileSystem.OpenFileReader(SourceLump);
 	lump = &lfr;
 
 	TArray<uint8_t> Pixels(Width*Height, true);
@@ -456,7 +457,7 @@ int FPNGTexture::CopyPixels(FBitmap *bmp, int conversion)
 	FileReader *lump;
 	FileReader lfr;
 
-	lfr = Wads.OpenLumpReader(SourceLump);
+	lfr = fileSystem.OpenFileReader(SourceLump);
 	lump = &lfr;
 
 	lump->Seek(33, FileReader::SeekSet);

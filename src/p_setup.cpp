@@ -34,7 +34,7 @@
 #include "d_player.h"
 #include "m_argv.h"
 #include "g_game.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "p_local.h"
 #include "p_effect.h"
 #include "p_terrain.h"
@@ -44,7 +44,7 @@
 #include "p_acs.h"
 #include "announcer.h"
 #include "wi_stuff.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 #include "gi.h"
 #include "p_conversation.h"
 #include "a_keys.h"
@@ -406,17 +406,8 @@ void P_SetupLevel(FLevelLocals *Level, int position, bool newGame)
 	{
 		Level->Players[i]->mo = nullptr;
 	}
-	// [RH] Clear any scripted translation colors the previous level may have set.
-	for (i = 0; i < int(translationtables[TRANSLATION_LevelScripted].Size()); ++i)
-	{
-		FRemapTable *table = translationtables[TRANSLATION_LevelScripted][i];
-		if (table != nullptr)
-		{
-			delete table;
-			translationtables[TRANSLATION_LevelScripted][i] = nullptr;
-		}
-	}
-	translationtables[TRANSLATION_LevelScripted].Clear();
+	palMgr.ClearTranslationSlot(TRANSLATION_LevelScripted);
+
 
 	// Initial height of PointOfView will be set by player think.
 	auto p = Level->GetConsolePlayer();

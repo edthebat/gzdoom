@@ -29,12 +29,12 @@
 #include "hwrenderer/textures/hw_material.h"
 #include "swrenderer/r_renderer.h"
 #include "r_swscene.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "d_player.h"
 #include "textures/bitmap.h"
 #include "swrenderer/scene/r_light.h"
 #include "image.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 
 // [RH] Base blending values (for e.g. underwater)
 int BaseBlendR, BaseBlendG, BaseBlendB;
@@ -112,7 +112,7 @@ sector_t *SWSceneDrawer::RenderView(player_t *player)
 		auto buf = systemTexture->MapBuffer();
 		if (!buf) I_FatalError("Unable to map buffer for software rendering");
 		SWRenderer->RenderView(player, Canvas.get(), buf, systemTexture->GetBufferPitch());
-		systemTexture->CreateTexture(nullptr, screen->GetWidth(), screen->GetHeight(), 0, false, 0, "swbuffer");
+		systemTexture->CreateTexture(nullptr, screen->GetWidth(), screen->GetHeight(), 0, false, "swbuffer");
 
 		auto map = swrenderer::CameraLight::Instance()->ShaderColormap();
 		screen->DrawTexture(fbtex.get(), 0, 0, DTA_SpecialColormap, map, TAG_DONE);

@@ -89,8 +89,7 @@ DCanvas *PolyHardwareTexture::GetImage(const FMaterialState &state)
 		if (tex->isHardwareCanvas()) clampmode = CLAMP_CAMTEX;
 		else if ((tex->isWarped() || tex->shaderindex >= FIRST_USER_SHADER) && clampmode <= CLAMP_XY) clampmode = CLAMP_NONE;
 
-		// Textures that are already scaled in the texture lump will not get replaced by hires textures.
-		int flags = state.mMaterial->isExpanded() ? CTF_Expand : (gl_texture_usehires && !tex->isScaled() && clampmode <= CLAMP_XY) ? CTF_CheckHires : 0;
+		int flags = state.mMaterial->isExpanded() ? CTF_Expand : 0;
 
 		return GetImage(tex, translation, flags);
 	}
@@ -131,7 +130,7 @@ uint8_t *PolyHardwareTexture::MapBuffer()
 	return mCanvas->GetPixels();
 }
 
-unsigned int PolyHardwareTexture::CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, int translation, const char *name)
+unsigned int PolyHardwareTexture::CreateTexture(unsigned char * buffer, int w, int h, int texunit, bool mipmap, const char *name)
 {
 	return 0;
 }
@@ -167,9 +166,6 @@ void PolyHardwareTexture::CreateImage(FTexture *tex, int translation, int flags)
 
 	if (!tex->isHardwareCanvas())
 	{
-		auto remap = TranslationToTable(translation);
-		translation = remap == nullptr ? 0 : remap->GetUniqueIndex();
-
 		FTextureBuffer texbuffer = tex->CreateTexBuffer(translation, flags | CTF_ProcessData);
 		mCanvas->Resize(texbuffer.mWidth, texbuffer.mHeight, false);
 		memcpy(mCanvas->GetPixels(), texbuffer.mBuffer, texbuffer.mWidth * texbuffer.mHeight * 4);

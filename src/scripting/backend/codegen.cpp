@@ -45,7 +45,7 @@
 #include "p_lnspec.h"
 #include "codegen.h"
 #include "v_text.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "doomstat.h"
 #include "g_levellocals.h"
 #include "v_video.h"
@@ -148,7 +148,7 @@ void FCompileContext::CheckReturn(PPrototype *proto, FScriptPosition &pos)
 
 	if (ReturnProto->ReturnTypes.Size() < proto->ReturnTypes.Size())
 	{ // Make proto the shorter one to avoid code duplication below.
-		swapvalues(proto, ReturnProto);
+		std::swap(proto, ReturnProto);
 		swapped = true;
 	}
 	// If one prototype returns nothing, they both must.
@@ -165,7 +165,7 @@ void FCompileContext::CheckReturn(PPrototype *proto, FScriptPosition &pos)
 		{
 			PType* expected = ReturnProto->ReturnTypes[i];
 			PType* actual = proto->ReturnTypes[i];
-			if (swapped) swapvalues(expected, actual);
+			if (swapped) std::swap(expected, actual);
 
 			if (expected != actual && !AreCompatiblePointerTypes(expected, actual))
 			{ // Incompatible
@@ -187,7 +187,7 @@ bool FCompileContext::CheckWritable(int flags)
 {
 	if (!(flags & VARF_ReadOnly)) return false;
 	if (!(flags & VARF_InternalAccess)) return true;
-	return Wads.GetLumpFile(Lump) != 0;
+	return fileSystem.GetFileContainer(Lump) != 0;
 }
 
 FxLocalVariableDeclaration *FCompileContext::FindLocalVariable(FName name)
@@ -2917,7 +2917,7 @@ ExpEmit FxAddSub::Emit(VMFunctionBuilder *build)
 		// Since addition is commutative, only the second operand may be a constant.
 		if (op1.Konst)
 		{
-			swapvalues(op1, op2);
+			std::swap(op1, op2);
 		}
 		assert(!op1.Konst);
 		op1.Free(build);
@@ -3156,7 +3156,7 @@ ExpEmit FxMulDiv::Emit(VMFunctionBuilder *build)
 		assert(Operator != '%');
 		if (right->IsVector())
 		{
-			swapvalues(op1, op2);
+			std::swap(op1, op2);
 		}
 		int op;
 		if (op2.Konst)
@@ -3179,7 +3179,7 @@ ExpEmit FxMulDiv::Emit(VMFunctionBuilder *build)
 		// Multiplication is commutative, so only the second operand may be constant.
 		if (op1.Konst)
 		{
-			swapvalues(op1, op2);
+			std::swap(op1, op2);
 		}
 		assert(!op1.Konst);
 		op1.Free(build);
@@ -3811,7 +3811,7 @@ ExpEmit FxCompareEq::EmitCommon(VMFunctionBuilder *build, bool forcompare, bool 
 		// Only the second operand may be constant.
 		if (op1.Konst)
 		{
-			swapvalues(op1, op2);
+			std::swap(op1, op2);
 		}
 		assert(!op1.Konst);
 		assert(op1.RegCount >= 1 && op1.RegCount <= 3);
@@ -3934,7 +3934,7 @@ ExpEmit FxBitOp::Emit(VMFunctionBuilder *build)
 	op2 = right->Emit(build);
 	if (op1.Konst)
 	{
-		swapvalues(op1, op2);
+		std::swap(op1, op2);
 	}
 	assert(!op1.Konst);
 	rop = op2.RegNum;
@@ -6141,7 +6141,7 @@ FxExpression *FxIdentifier::Resolve(FCompileContext& ctx)
 					// even if it depends on some deprecated symbol. 
 					// The main motivation here is to keep the deprecated static functions accessing the global level variable as they were.
 					// Print these only if debug output is active and at the highest verbosity level.
-					const bool internal = (ctx.Function->Variants[0].Flags & VARF_Deprecated) && Wads.GetLumpFile(ctx.Lump) == 0;
+					const bool internal = (ctx.Function->Variants[0].Flags & VARF_Deprecated) && fileSystem.GetFileContainer(ctx.Lump) == 0;
 					const FString &deprecationMessage = vsym->DeprecationMessage;
 
 					ScriptPosition.Message(internal ? MSG_DEBUGMSG : MSG_WARNING, 
@@ -6164,7 +6164,7 @@ FxExpression *FxIdentifier::Resolve(FCompileContext& ctx)
 	}
 
 	// and line specials
-	if (newex == nullptr && (num = P_FindLineSpecial(Identifier, nullptr, nullptr)))
+	if (newex == nullptr && (num = P_FindLineSpecial(Identifier.GetChars(), nullptr, nullptr)))
 	{
 		ScriptPosition.Message(MSG_DEBUGLOG, "Resolving name '%s' as line special %d\n", Identifier.GetChars(), num);
 		newex = new FxConstant(num, ScriptPosition);
@@ -6371,7 +6371,7 @@ FxExpression *FxMemberIdentifier::Resolve(FCompileContext& ctx)
 			// Thanks to the messed up search logic of the type system, which doesn't allow any search by type name for the basic types at all,
 			// we have to do this manually, though and check for all types that may have values attached explicitly. 
 			// (What's the point of attached fields to types if you cannot even search for the types...???)
-			switch (id)
+			switch (id.GetIndex())
 			{
 			default:
 				type = nullptr;
@@ -6855,8 +6855,8 @@ ExpEmit FxCVar::Emit(VMFunctionBuilder *build)
 		break;
 
 	case CVAR_String:
-		build->Emit(OP_LKP, addr.RegNum, build->GetConstantAddress(&static_cast<FStringCVar *>(CVar)->Value));
-		build->Emit(OP_LCS, dest.RegNum, addr.RegNum, nul);
+		build->Emit(OP_LKP, addr.RegNum, build->GetConstantAddress(&static_cast<FStringCVar *>(CVar)->mValue));
+		build->Emit(OP_LS, dest.RegNum, addr.RegNum, nul);
 		break;
 
 	case CVAR_DummyBool:
@@ -7674,7 +7674,7 @@ FxFunctionCall::FxFunctionCall(FName methodname, FName rngname, FArgumentList &a
 	ArgList = std::move(args);
 	if (rngname != NAME_None)
 	{
-		switch (MethodName)
+		switch (MethodName.GetIndex())
 		{
 		case NAME_Random:
 		case NAME_FRandom:
@@ -7870,7 +7870,7 @@ FxExpression *FxFunctionCall::Resolve(FCompileContext& ctx)
 	// Note that for all builtins the used arguments have to be nulled in the ArgList so that they won't get deleted before they get used.
 	FxExpression *func = nullptr;
 
-	switch (MethodName)
+	switch (MethodName.GetIndex())
 	{
 	case NAME_Color:
 		if (ArgList.Size() == 3 || ArgList.Size() == 4)
@@ -8215,7 +8215,7 @@ FxExpression *FxMemberFunctionCall::Resolve(FCompileContext& ctx)
 			// No need to create a dedicated node here, all builtins map directly to trivial operations.
 			Self->ValueType = TypeSInt32;	// all builtins treat the texture index as integer.
 			FxExpression *x;
-			switch (MethodName)
+			switch (MethodName.GetIndex())
 			{
 			case NAME_IsValid:
 				x = new FxCompareRel('>', Self, new FxConstant(0, ScriptPosition));
@@ -8741,7 +8741,7 @@ ExpEmit FxActionSpecialCall::Emit(VMFunctionBuilder *build)
 		{
 			assert(argex->ValueType == TypeName);
 			assert(argex->isConstant());
-			emitters.AddParameterIntConst(-static_cast<FxConstant *>(argex)->GetValue().GetName());
+			emitters.AddParameterIntConst(-static_cast<FxConstant *>(argex)->GetValue().GetName().GetIndex());
 		}
 		else
 		{
@@ -10195,7 +10195,7 @@ FxExpression *FxCaseStatement::Resolve(FCompileContext &ctx)
 		}
 		else
 		{
-			CaseValue = static_cast<FxConstant *>(Condition)->GetValue().GetName();
+			CaseValue = static_cast<FxConstant *>(Condition)->GetValue().GetName().GetIndex();
 		}
 	}
 	return this;
@@ -10999,7 +10999,7 @@ DEFINE_ACTION_FUNCTION_NATIVE(DObject, BuiltinNameToClass, NativeNameToClass)
 	PARAM_NAME(clsname);
 	PARAM_CLASS(desttype, DObject);
 
-	ACTION_RETURN_POINTER(NativeNameToClass(clsname, desttype));
+	ACTION_RETURN_POINTER(NativeNameToClass(clsname.GetIndex(), desttype));
 }
 
 ExpEmit FxClassTypeCast::Emit(VMFunctionBuilder *build)

@@ -46,7 +46,7 @@
 #include "r_data/r_interpolate.h"
 #include "r_state.h"
 #include "p_lnspec.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "p_terrain.h"
 #include "p_setup.h"
 #include "p_conversation.h"
@@ -55,7 +55,7 @@
 #include "a_sharedglobal.h"
 #include "po_man.h"
 #include "v_font.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 #include "v_text.h"
 #include "cmdlib.h"
 #include "g_levellocals.h"
@@ -658,7 +658,7 @@ FSerializer &FSerializer::Args(const char *key, int *args, int *defargs, int spe
 					}
 					else if (i == 0 && aval.IsString())
 					{
-						args[i] = -FName(UnicodeToString(aval.GetString()));
+						args[i] = -FName(UnicodeToString(aval.GetString())).GetIndex();
 					}
 					else
 					{
@@ -710,7 +710,7 @@ FSerializer &FSerializer::ScriptNum(const char *key, int &num)
 			}
 			else if (val->IsString())
 			{
-				num = -FName(UnicodeToString(val->GetString()));
+				num = -FName(UnicodeToString(val->GetString())).GetIndex();
 			}
 			else
 			{
@@ -1281,6 +1281,15 @@ FSerializer &Serialize(FSerializer &arc, const char *key, uint32_t &value, uint3
 //
 //==========================================================================
 
+FSerializer& Serialize(FSerializer& arc, const char* key, char& value, char* defval)
+{
+	int32_t vv = value;
+	int32_t vvd = defval ? *defval : value - 1;
+	Serialize(arc, key, vv, &vvd);
+	value = (int8_t)vv;
+	return arc;
+}
+
 FSerializer &Serialize(FSerializer &arc, const char *key, int8_t &value, int8_t *defval)
 {
 	int32_t vv = value;
@@ -1464,9 +1473,9 @@ FSerializer &Serialize(FSerializer &arc, const char *key, FTextureID &value, FTe
 			FTexture *pic = TexMan.GetTexture(chk);
 			const char *name;
 
-			if (Wads.GetLinkedTexture(pic->SourceLump) == pic)
+			if (fileSystem.GetLinkedTexture(pic->SourceLump) == pic)
 			{
-				name = Wads.GetLumpFullName(pic->SourceLump);
+				name = fileSystem.GetFileFullName(pic->SourceLump);
 			}
 			else
 			{
@@ -2150,7 +2159,7 @@ template<> FSerializer &Serialize(FSerializer &arc, const char *key, FFont *&fon
 	{
 		FName n = NAME_None;
 		arc(key, n);
-		font = n == NAME_None? nullptr : V_GetFont(n);
+		font = n == NAME_None? nullptr : V_GetFont(n.GetChars());
 		return arc;
 	}
 

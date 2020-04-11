@@ -36,10 +36,10 @@
 #include "p_lnspec.h"
 #include "p_conversation.h"
 #include "udmf.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 #include "actor.h"
 #include "a_pickups.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "g_levellocals.h"
 #include "maploader.h"
 
@@ -57,7 +57,7 @@ class USDFParser : public UDMFParserBase
 	//
 	//===========================================================================
 
-	PClassActor *CheckActorType(const char *key)
+	PClassActor *CheckActorType(FName key)
 	{
 		PClassActor *type = nullptr;
 		if (namespace_bits == St)
@@ -79,7 +79,7 @@ class USDFParser : public UDMFParserBase
 		return type;
 	}
 
-	PClassActor *CheckInventoryActorType(const char *key)
+	PClassActor *CheckInventoryActorType(FName key)
 	{
 		PClassActor* const type = CheckActorType(key);
 		return nullptr != type && type->IsDescendantOf(NAME_Inventory) ? type : nullptr;
@@ -100,7 +100,7 @@ class USDFParser : public UDMFParserBase
 		while (!sc.CheckToken('}'))
 		{
 			FName key = ParseKey();
-			switch(key)
+			switch(key.GetIndex())
 			{
 			case NAME_Item:
 				check.Item = CheckInventoryActorType(key);
@@ -112,7 +112,7 @@ class USDFParser : public UDMFParserBase
 			}
 		}
 
-		switch (type)
+		switch (type.GetIndex())
 		{
 		case NAME_Cost:		response->ItemCheck.Push(check);	break;
 		case NAME_Require:	response->ItemCheckRequire.Push(check); break;
@@ -149,7 +149,7 @@ class USDFParser : public UDMFParserBase
 			FName key = ParseKey(true, &block);
 			if (!block)
 			{
-				switch(key)
+				switch(key.GetIndex())
 				{
 				case NAME_Text:
 					ReplyString = CheckString(key);
@@ -218,7 +218,7 @@ class USDFParser : public UDMFParserBase
 				case NAME_Arg2:
 				case NAME_Arg3:
 				case NAME_Arg4:
-					reply->Args[int(key)-int(NAME_Arg0)] = CheckInt(key);
+					reply->Args[key.GetIndex()-int(NAME_Arg0)] = CheckInt(key);
 					break;
 
 
@@ -226,7 +226,7 @@ class USDFParser : public UDMFParserBase
 			}
 			else
 			{
-				switch(key)
+				switch(key.GetIndex())
 				{
 				case NAME_Cost:
 				case NAME_Require:
@@ -290,7 +290,7 @@ class USDFParser : public UDMFParserBase
 		while (!sc.CheckToken('}'))
 		{
 			FName key = ParseKey();
-			switch(key)
+			switch(key.GetIndex())
 			{
 			case NAME_Item:
 				check.Item = CheckInventoryActorType(key);
@@ -331,7 +331,7 @@ class USDFParser : public UDMFParserBase
 			FName key = ParseKey(true, &block);
 			if (!block)
 			{
-				switch(key)
+				switch(key.GetIndex())
 				{
 				case NAME_Pagename:
 					if (namespace_bits != Gz)
@@ -397,7 +397,7 @@ class USDFParser : public UDMFParserBase
 			}
 			else
 			{
-				switch(key)
+				switch(key.GetIndex())
 				{
 				case NAME_Ifitem:
 					if (!ParseIfItem(node)) return false;
@@ -439,7 +439,7 @@ class USDFParser : public UDMFParserBase
 			FName key = ParseKey(true, &block);
 			if (!block)
 			{
-				switch(key)
+				switch(key.GetIndex())
 				{
 				case NAME_Actor:
 					type = CheckActorType(key);
@@ -466,7 +466,7 @@ class USDFParser : public UDMFParserBase
 			}
 			else
 			{
-				switch(key)
+				switch(key.GetIndex())
 				{
 				case NAME_Page:
 					if (!ParsePage()) return false;
@@ -565,7 +565,7 @@ public:
 	bool Parse(MapLoader *loader,int lumpnum, FileReader &lump, int lumplen)
 	{
 		Level = loader->Level;
-		sc.OpenMem(Wads.GetLumpFullName(lumpnum), lump.Read(lumplen));
+		sc.OpenMem(fileSystem.GetFileFullName(lumpnum), lump.Read(lumplen));
 		sc.SetCMode(true);
 		// Namespace must be the first field because everything else depends on it.
 		if (sc.CheckString("namespace"))
@@ -573,7 +573,7 @@ public:
 			sc.MustGetToken('=');
 			sc.MustGetToken(TK_StringConst);
 			namespc = sc.String;
-			switch(namespc)
+			switch(namespc.GetIndex())
 			{
 			case NAME_GZDoom:
 				namespace_bits = Gz;

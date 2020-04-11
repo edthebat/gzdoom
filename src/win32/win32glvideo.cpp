@@ -48,7 +48,7 @@
 #include "doomstat.h"
 #include "v_text.h"
 #include "m_argv.h"
-#include "doomerrors.h"
+#include "engineerrors.h"
 #include "win32glvideo.h"
 
 #include "gl/system/gl_framebuffer.h"
@@ -97,7 +97,7 @@ DFrameBuffer *Win32GLVideo::CreateFrameBuffer()
 {
 	SystemGLFrameBuffer *fb;
 
-	fb = new OpenGLRenderer::OpenGLFrameBuffer(m_hMonitor, fullscreen);
+	fb = new OpenGLRenderer::OpenGLFrameBuffer(m_hMonitor, vid_fullscreen);
 	return fb;
 }
 

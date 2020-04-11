@@ -36,7 +36,7 @@
 
 #include "doomtype.h"
 #include "files.h"
-#include "w_wad.h"
+#include "filesystem.h"
 #include "templates.h"
 
 #include "r_data/r_translate.h"
@@ -165,14 +165,14 @@ FTexture::FTexture (const char *name, int lumpnum)
 	}
 	else
 	{
-		Wads.GetLumpName (Name, lumpnum);
+		fileSystem.GetFileShortName (Name, lumpnum);
 	}
 }
 
 FTexture::~FTexture ()
 {
-	FTexture *link = Wads.GetLinkedTexture(SourceLump);
-	if (link == this) Wads.SetLinkedTexture(SourceLump, nullptr);
+	FTexture *link = fileSystem.GetLinkedTexture(SourceLump);
+	if (link == this) fileSystem.SetLinkedTexture(SourceLump, nullptr);
 	if (areas != nullptr) delete[] areas;
 	areas = nullptr;
 
@@ -391,10 +391,10 @@ void FTexture::AddAutoMaterials()
 		if (this->*(layer.pointer) == nullptr)	// only if no explicit assignment had been done.
 		{
 			FStringf lookup("%s%s%s", layer.path, bFullNameTexture ? "" : "auto/", searchname.GetChars());
-			auto lump = Wads.CheckNumForFullName(lookup, false, ns_global, true);
+			auto lump = fileSystem.CheckNumForFullName(lookup, false, ns_global, true);
 			if (lump != -1)
 			{
-				auto bmtex = TexMan.FindTexture(Wads.GetLumpFullName(lump), ETextureType::Any, FTextureManager::TEXMAN_TryAny);
+				auto bmtex = TexMan.FindTexture(fileSystem.GetFileFullName(lump), ETextureType::Any, FTextureManager::TEXMAN_TryAny);
 				if (bmtex != nullptr)
 				{
 					bmtex->bMasked = false;
@@ -691,11 +691,6 @@ FTextureBuffer FTexture::CreateTexBuffer(int translation, int flags)
 	int isTransparent = -1;
 	bool checkonly = !!(flags & CTF_CheckOnly);
 
-	if (flags & CTF_CheckHires)
-	{
-		// No image means that this cannot be checked,
-		if (GetImage() && LoadHiresTexture(result, checkonly)) return result;
-	}
 	int exx = !!(flags & CTF_Expand);
 
 	W = GetWidth() + 2 * exx;
@@ -706,11 +701,11 @@ FTextureBuffer FTexture::CreateTexBuffer(int translation, int flags)
 		buffer = new unsigned char[W*(H + 1) * 4];
 		memset(buffer, 0, W * (H + 1) * 4);
 
-		auto remap = translation <= 0 ? nullptr : FUniquePalette::GetPalette(translation);
+		auto remap = translation <= 0 ? nullptr : palMgr.TranslationToTable(translation);
 		FBitmap bmp(buffer, W * 4, W, H);
 
 		int trans;
-		auto Pixels = GetBgraBitmap(remap, &trans);
+		auto Pixels = GetBgraBitmap(remap? remap->Palette : nullptr, &trans);
 		bmp.Blit(exx, exx, Pixels);
 
 		if (remap == nullptr)

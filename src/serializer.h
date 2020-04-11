@@ -5,9 +5,9 @@
 #include <type_traits>
 #include "tarray.h"
 #include "r_defs.h"
-#include "resourcefiles/file_zip.h"
+#include "file_zip.h"
 #include "tflags.h"
-#include "utility/dictionary.h"
+#include "dictionary.h"
 
 extern bool save_full;
 
@@ -186,6 +186,7 @@ public:
 	int mErrors = 0;
 };
 
+FSerializer& Serialize(FSerializer& arc, const char* key, char& value, char* defval);
 FSerializer &Serialize(FSerializer &arc, const char *key, bool &value, bool *defval);
 FSerializer &Serialize(FSerializer &arc, const char *key, int64_t &value, int64_t *defval);
 FSerializer &Serialize(FSerializer &arc, const char *key, uint64_t &value, uint64_t *defval);
